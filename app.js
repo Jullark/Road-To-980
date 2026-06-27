@@ -1,4 +1,5 @@
-const KEY='road980-state-v42'; // estado nuevo validado para evitar datos corruptos en iPad
+const KEY='road980-state-v42'; // se conserva para no perder tu colección
+const THEME_KEY='road980-theme-v43';
 let albumSort='album';
 const OWNER_HASH='NDAw'; // no muestra el PIN en UI; comprobación simple local
 let state=null;
@@ -9,6 +10,33 @@ let unlocked=false;
 let lockTimer=null;
 const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
+
+const THEMES=[
+  {id:'world',name:'World Cup',desc:'Azul mundial + dorado',preview:'preview-world'},
+  {id:'midnight',name:'Midnight',desc:'Oscuro premium',preview:'preview-midnight'},
+  {id:'snow',name:'Snow',desc:'Claro y minimalista',preview:'preview-snow'},
+  {id:'mexico',name:'México',desc:'Esmeralda + rojo',preview:'preview-mexico'},
+  {id:'usa',name:'USA',desc:'Navy + rojo',preview:'preview-usa'},
+  {id:'canada',name:'Canadá',desc:'Blanco + rojo vino',preview:'preview-canada'}
+];
+function getTheme(){return localStorage.getItem(THEME_KEY)||'world'}
+function applyTheme(id){
+  const theme=THEMES.some(t=>t.id===id)?id:'world';
+  document.documentElement.setAttribute('data-theme',theme);
+  localStorage.setItem(THEME_KEY,theme);
+  const meta=document.querySelector('meta[name="theme-color"]');
+  const colors={world:'#0b2a4a',midnight:'#080b12',snow:'#eef6ff',mexico:'#f7fbf8',usa:'#f5f8ff',canada:'#fff5f5'};
+  if(meta) meta.setAttribute('content',colors[theme]||colors.world);
+}
+function renderThemeOptions(){
+  const grid=$('#themeGrid'); if(!grid) return;
+  const active=getTheme();
+  grid.innerHTML=THEMES.map(t=>`<button class="theme-option ${t.id===active?'active':''}" data-theme="${t.id}"><div class="theme-preview ${t.preview}"><i style="background:var(--green)"></i><i style="background:var(--red)"></i><i style="background:var(--blue)"></i></div><strong>${t.name}</strong><span>${t.desc}</span></button>`).join('');
+  $$('#themeGrid [data-theme]').forEach(btn=>btn.onclick=()=>{applyTheme(btn.dataset.theme);renderThemeOptions();showToast('Tema actualizado');});
+}
+function openThemeSheet(){renderThemeOptions();$('#themeSheet').classList.remove('hidden');}
+function closeThemeSheet(){ $('#themeSheet').classList.add('hidden'); }
+
 
 function clone(o){return JSON.parse(JSON.stringify(o));}
 function isValidState(data){
@@ -267,6 +295,9 @@ function exportState(){const a=document.createElement('a');a.href=URL.createObje
 function renderAll(){renderHome();renderAlbum();renderTrade();renderStats();updateOwnerBtn();}
 function bind(){
   $$('.bottom-nav button').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+  $('#themeBtn').onclick=openThemeSheet;
+  $('#cancelTheme').onclick=closeThemeSheet;
+  $('#themeBackdrop').onclick=closeThemeSheet;
   $('#ownerBtn').onclick=()=>{ if(unlocked){unlocked=false;updateOwnerBtn();showToast('Modo lectura');return;} $('#pinInput').value=''; $('#pinModal').classList.remove('hidden'); setTimeout(()=>$('#pinInput').focus(),50); };
   $('#cancelPin').onclick=()=>{$('#pinInput').value='';$('#pinModal').classList.add('hidden')};
   $('#unlockPin').onclick=()=>{const v=$('#pinInput').value; if(verifyPin(v)){unlocked=true;$('#pinInput').value='';$('#pinModal').classList.add('hidden');updateOwnerBtn();resetLockTimer();showToast('Modo propietario activo');}else{showToast('PIN incorrecto');$('#pinInput').value='';}};
@@ -283,4 +314,4 @@ function bind(){
   });
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=4.2').catch(()=>{});
 }
-try{ state=loadState(); renderAll(); bind(); }catch(err){ console.error(err); showFatalError(err); }
+try{ applyTheme(getTheme()); state=loadState(); renderAll(); bind(); renderThemeOptions(); }catch(err){ console.error(err); showFatalError(err); }
