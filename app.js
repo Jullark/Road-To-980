@@ -1,7 +1,9 @@
-const KEY='road980-state-v31';
+const KEY='road980-state-v31'; // se mantiene para no perder cambios locales
 const OWNER_HASH='NDAw'; // no muestra el PIN en UI; comprobación simple local
 let state=loadState();
 let currentTeam=null;
+let detailFilter='all';
+let pendingSticker=null;
 let unlocked=false;
 let lockTimer=null;
 const $=s=>document.querySelector(s);
@@ -97,38 +99,68 @@ function drawTeams(q){
     list.appendChild(card);
   });
 }
-function openTeam(name){currentTeam=name; renderDetail(); setView('detailView');}
+function openTeam(name){currentTeam=name; detailFilter='all'; renderDetail(); setView('detailView');}
 function status(t,n){ if(t.missing.includes(n))return 'missing'; if(t.duplicates.includes(n))return 'duplicate'; return 'owned'; }
 function statusLabel(s){return s==='missing'?'Falta':s==='duplicate'?'Duplicado':'Tengo'}
-function cycleSticker(t,n){
-  if(!unlocked){ showToast('Activa el candado para editar'); return; }
+function setStickerStatus(t,n,newStatus){
   resetLockTimer();
-  let s=status(t,n);
-  t.missing=t.missing.filter(x=>x!==n); t.duplicates=t.duplicates.filter(x=>x!==n);
-  if(s==='owned') t.missing.push(n);
-  else if(s==='missing') t.duplicates.push(n);
-  t.missing.sort((a,b)=>a-b); t.duplicates.sort((a,b)=>a-b);
-  save(); renderAll(); renderDetail(); showToast(`Sticker ${n}: ${statusLabel(status(t,n))}`);
+  t.missing=t.missing.filter(x=>x!==n);
+  t.duplicates=t.duplicates.filter(x=>x!==n);
+  if(newStatus==='missing') t.missing.push(n);
+  if(newStatus==='duplicate') t.duplicates.push(n);
+  t.missing.sort((a,b)=>a-b);
+  t.duplicates.sort((a,b)=>a-b);
+  save();
+  renderAll();
+  renderDetail(detailFilter);
+  showToast(`${t.name} #${n}: ${statusLabel(newStatus)}`);
+}
+function openStatusSheet(t,n){
+  if(!unlocked){ showToast('Activa el candado para editar'); return; }
+  pendingSticker={team:t.name,number:n};
+  const current=status(t,n);
+  $('#sheetTitle').textContent=`${t.name} #${n}`;
+  $('#sheetSubtitle').textContent=`Estado actual: ${statusLabel(current)}`;
+  $$('#statusSheet [data-status]').forEach(btn=>btn.classList.toggle('selected',btn.dataset.status===current));
+  $('#statusSheet').classList.remove('hidden');
+}
+function closeStatusSheet(){
+  pendingSticker=null;
+  $('#statusSheet').classList.add('hidden');
 }
 function renderDetail(filter='all'){
+  detailFilter=filter;
   const t=state.teams.find(x=>x.name===currentTeam)||state.teams[0]; currentTeam=t.name;
   const c=teamCounts(t);
   const btns=['all','owned','missing','duplicate'].map(f=>`<button class="${filter===f?'active':''}" data-filter="${f}">${f==='all'?'Todos':f==='owned'?'Tengo':f==='missing'?'Faltan':'Duplicados'}</button>`).join('');
-  const stickers=Array.from({length:t.total},(_,i)=>i+1).filter(n=>filter==='all'||status(t,n)===filter).map(n=>`<button class="sticker ${status(t,n)}" data-n="${n}">${n}</button>`).join('') || `<p class="empty">No hay stickers en este filtro.</p>`;
+  const stickers=Array.from({length:t.total},(_,i)=>i+1)
+    .filter(n=>filter==='all'||status(t,n)===filter)
+    .map(n=>`<button class="sticker ${status(t,n)}" data-n="${n}"><span>${n}</span><small>${statusLabel(status(t,n))}</small></button>`).join('') || `<p class="empty">No hay stickers en este filtro.</p>`;
   $('#detailView').innerHTML=`
     <button class="back-btn" id="backAlbum">← Volver al álbum</button>
-    <div class="detail-hero panel">
-      <div class="detail-top">${flagImg(t)}<div><h2>${t.name}</h2><p class="muted">${c.owned}/${t.total} stickers · ${Math.round(c.pct)}%</p></div></div>
-      <div class="bar"><span style="width:${c.pct}%"></span></div>
-      <div class="detail-stats"><div class="detail-stat green"><strong>${c.owned}</strong><br><span>Tengo</span></div><div class="detail-stat red"><strong>${c.missing}</strong><br><span>Faltan</span></div><div class="detail-stat blue"><strong>${c.duplicates}</strong><br><span>Duplicados</span></div></div>
+    <div class="country-hero panel">
+      <div class="country-top">
+        <div class="country-flag">${flagImg(t)}</div>
+        <div class="country-copy"><span>Detalle de selección</span><h2>${t.name}</h2><p>${c.owned}/${t.total} stickers · ${Math.round(c.pct)}%</p></div>
+        <div class="mini-ring" style="--p:${c.pct}"><strong>${Math.round(c.pct)}%</strong></div>
+      </div>
+      <div class="bar country-bar"><span style="width:${c.pct}%"></span></div>
+      <div class="detail-stats premium">
+        <div class="detail-stat green"><i>✓</i><strong>${c.owned}</strong><span>Tengo</span></div>
+        <div class="detail-stat red"><i>×</i><strong>${c.missing}</strong><span>Faltan</span></div>
+        <div class="detail-stat blue"><i>⧉</i><strong>${c.duplicates}</strong><span>Duplicados</span></div>
+      </div>
+    </div>
+    <div class="panel sticker-panel">
+      <div class="panel-title"><h3>Stickers</h3><p>${unlocked?'Toca un número para cambiarlo.':'Modo lectura activado.'}</p></div>
       <div class="filters">${btns}</div>
-      <div class="sticker-grid">${stickers}</div>
+      <div class="sticker-grid v32">${stickers}</div>
     </div>
     <div class="list-panel panel"><h3>Faltantes</h3>${chips(t.missing,'red')}</div>
     <div class="list-panel panel" style="margin-top:12px"><h3>Duplicados</h3>${chips(t.duplicates,'blue')}</div>`;
   $('#backAlbum').onclick=()=>setView('albumView');
   $$('#detailView [data-filter]').forEach(b=>b.onclick=()=>renderDetail(b.dataset.filter));
-  $$('#detailView .sticker').forEach(b=>b.onclick=()=>cycleSticker(t,Number(b.dataset.n)));
+  $$('#detailView .sticker').forEach(b=>b.onclick=()=>openStatusSheet(t,Number(b.dataset.n)));
 }
 function chips(arr,color){return arr.length?`<div class="chips">${arr.map(n=>`<span class="chip ${color}">${n}</span>`).join('')}</div>`:`<p class="empty">Ninguno</p>`}
 function renderTrade(){
@@ -159,6 +191,16 @@ function bind(){
   $('#cancelPin').onclick=()=>{$('#pinInput').value='';$('#pinModal').classList.add('hidden')};
   $('#unlockPin').onclick=()=>{const v=$('#pinInput').value; if(verifyPin(v)){unlocked=true;$('#pinInput').value='';$('#pinModal').classList.add('hidden');updateOwnerBtn();resetLockTimer();showToast('Modo propietario activo');}else{showToast('PIN incorrecto');$('#pinInput').value='';}};
   $('#pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('#unlockPin').click()});
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=3.1').catch(()=>{});
+  $('#cancelStatus').onclick=closeStatusSheet;
+  $('#sheetBackdrop').onclick=closeStatusSheet;
+  $$('#statusSheet [data-status]').forEach(btn=>btn.onclick=()=>{
+    if(!pendingSticker)return;
+    const team=state.teams.find(x=>x.name===pendingSticker.team);
+    const n=pendingSticker.number;
+    const chosen=btn.dataset.status;
+    closeStatusSheet();
+    if(team){ setStickerStatus(team,n,chosen); if(navigator.vibrate) navigator.vibrate(12); }
+  });
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=3.2').catch(()=>{});
 }
 renderAll(); bind();

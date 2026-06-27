@@ -1,13 +1,11 @@
-# Road to 980 V3.1
+# Road to 980 — V3.2
 
-Cambios:
-- Banderas estables con FlagCDN y SVG local para Inglaterra/Escocia/FWC.
-- Safe area mejorado para iPhone.
-- Menú inferior más compacto.
-- Tarjetas de países más limpias.
-- Cache actualizado a v3.1.
+Cambios principales:
+- Pantalla de país rediseñada.
+- Encabezado premium con progreso circular y barra.
+- Stickers con estilo de ficha y etiqueta de estado.
+- En modo propietario, tocar un sticker abre menú inferior para elegir: Tengo / Falta / Duplicado.
+- En modo lectura, tocar sticker no abre PIN.
+- Caché actualizado a v3.2.
 
-Para actualizar GitHub Pages:
-1. Sube y reemplaza todos estos archivos en el repositorio.
-2. Commit changes.
-3. Abre la app y recarga. Si está instalada en pantalla de inicio, elimínala y agrégala de nuevo si ves cache viejo.
+Sube todos los archivos y reemplaza los anteriores en GitHub Pages.
