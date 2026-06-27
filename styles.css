@@ -87,3 +87,67 @@ body{overflow-x:hidden}.app-shell{transition:width .2s ease,padding .2s ease}.vi
 @media (min-width: 1280px){.premium-list{grid-template-columns:repeat(3,minmax(0,1fr))}.app-shell{width:min(1320px,100%)}}
 @media (hover:hover){.team-card.album-premium:hover,.quick-card:hover,.sticker:hover{transform:translateY(-2px);filter:brightness(1.04)}.team-card.album-premium,.quick-card,.sticker{transition:transform .18s ease,filter .18s ease}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* V4.1 — iPad/Safari tablet fix
+   El layout de escritorio de V4.0 se activaba en iPad y dejaba el contenido principal sin render útil.
+   En dispositivos táctiles tipo tablet mantenemos layout móvil/tablet con bottom nav. */
+@media (min-width: 768px) and (max-width: 1199px) and (pointer: coarse) {
+  .app-shell{
+    width:min(820px,100%) !important;
+    display:block !important;
+    grid-template-columns:none !important;
+    grid-template-rows:none !important;
+    padding:calc(env(safe-area-inset-top) + 18px) 28px calc(env(safe-area-inset-bottom) + 104px) !important;
+    min-height:100vh !important;
+  }
+  .app-header{
+    grid-column:auto !important;
+    margin-bottom:18px !important;
+  }
+  .view-wrap{
+    display:block !important;
+    grid-column:auto !important;
+    grid-row:auto !important;
+    width:100% !important;
+    min-width:0 !important;
+  }
+  .view.active{display:block !important;}
+  .bottom-nav{
+    position:fixed !important;
+    left:50% !important;
+    bottom:calc(env(safe-area-inset-bottom) + 14px) !important;
+    transform:translateX(-50%) !important;
+    width:min(640px,calc(100% - 36px)) !important;
+    height:78px !important;
+    display:grid !important;
+    grid-template-columns:repeat(4,1fr) !important;
+    flex-direction:initial !important;
+    grid-column:auto !important;
+    grid-row:auto !important;
+    align-self:auto !important;
+    padding:8px !important;
+    border-radius:30px !important;
+    gap:6px !important;
+  }
+  .bottom-nav button{
+    height:auto !important;
+    flex-direction:column !important;
+    justify-content:center !important;
+    padding:0 !important;
+    gap:2px !important;
+    border-radius:22px !important;
+  }
+  .bottom-nav button span{font-size:21px !important;}
+  .bottom-nav button b{font-size:12px !important;}
+  .premium-list{grid-template-columns:1fr !important;}
+  .quick-grid{grid-template-columns:repeat(2,1fr) !important;}
+  .album-tools{display:block !important;}
+  .sort-row{justify-content:flex-start !important;padding:12px 2px 2px !important;}
+  .sticker-grid.v32.clean-grid{grid-template-columns:repeat(5,1fr) !important;max-width:none !important;}
+  .country-hero,.sticker-panel.clean{max-width:none !important;}
+}
+
+/* Desktop real: solo computadoras con mouse/trackpad fino usan sidebar */
+@media (min-width: 980px) and (hover: hover) and (pointer: fine) {
+  .bottom-nav{position:sticky;}
+}

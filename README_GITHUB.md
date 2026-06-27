@@ -1,13 +1,14 @@
-# Road to 980 — V4.0 Universal
+# Road to 980 — V4.1 iPad Fix
 
-Versión enfocada en compatibilidad universal.
+Corrección enfocada en iPad/Safari:
+- Evita que iPad active el layout de escritorio con sidebar.
+- Restaura layout tablet con navegación inferior.
+- Fuerza render correcto del contenido principal.
+- Mantiene diseño responsive para iPhone, Android y computadora.
+- Cache actualizado a v4.1.
 
-Incluye:
-- Layout responsive para iPhone, Android, iPad y computadora.
-- En desktop el menú pasa a barra lateral.
-- En iPad/tablet se aprovecha mejor el ancho.
-- Grids adaptables para países y stickers.
-- PWA con caché actualizado a v4.0.
-- Mantiene datos oficiales: 789 tengo, 191 faltantes, 256 duplicados, PIN 0312.
-
-Para actualizar: sube y reemplaza todos los archivos en GitHub y haz commit.
+Para actualizar:
+1. Sube todos estos archivos al repositorio reemplazando los anteriores.
+2. Haz Commit changes.
+3. Abre la app y recarga.
+4. En iPad, si sigue vieja, cierra Safari y vuelve a abrir o borra la app de pantalla de inicio y agrégala de nuevo.
