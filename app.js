@@ -1,7 +1,7 @@
-const KEY='road980-state-v31'; // se mantiene para no perder cambios locales
+const KEY='road980-state-v42'; // estado nuevo validado para evitar datos corruptos en iPad
 let albumSort='album';
 const OWNER_HASH='NDAw'; // no muestra el PIN en UI; comprobación simple local
-let state=loadState();
+let state=null;
 let currentTeam=null;
 let detailFilter='all';
 let pendingSticker=null;
@@ -11,12 +11,31 @@ const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
 
 function clone(o){return JSON.parse(JSON.stringify(o));}
-function loadState(){
-  const saved=localStorage.getItem(KEY);
-  if(saved){try{return JSON.parse(saved)}catch(e){}}
-  return clone(window.ROAD980_DATA);
+function isValidState(data){
+  return !!(data && Array.isArray(data.teams) && data.teams.length >= 49 && data.summary && Number(data.summary.albumTotal) === 980);
 }
-function save(){localStorage.setItem(KEY,JSON.stringify(state));}
+function getBaseState(){
+  if(isValidState(window.ROAD980_DATA)) return clone(window.ROAD980_DATA);
+  throw new Error('No se pudo cargar la base de datos del álbum.');
+}
+function loadState(){
+  try{
+    const saved=localStorage.getItem(KEY);
+    if(saved){
+      const parsed=JSON.parse(saved);
+      if(isValidState(parsed)) return parsed;
+      localStorage.removeItem(KEY);
+    }
+  }catch(e){
+    try{localStorage.removeItem(KEY)}catch(_){}
+  }
+  return getBaseState();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){console.warn('No se pudo guardar localmente',e);}}
+function showFatalError(err){
+  const target=document.querySelector('#homeView') || document.body;
+  target.innerHTML=`<div class="panel error-panel"><h2>Algo falló al iniciar</h2><p>${String(err && err.message ? err.message : err)}</p><button onclick="localStorage.clear(); location.reload()">Reiniciar datos locales</button></div>`;
+}
 function counts(){
   const missing=state.teams.reduce((a,t)=>a+t.missing.length,0);
   const duplicates=state.teams.reduce((a,t)=>a+t.duplicates.length,0);
@@ -262,6 +281,6 @@ function bind(){
     closeStatusSheet();
     if(team){ setStickerStatus(team,n,chosen); if(navigator.vibrate) navigator.vibrate(12); }
   });
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=3.3').catch(()=>{});
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=4.2').catch(()=>{});
 }
-renderAll(); bind();
+try{ state=loadState(); renderAll(); bind(); }catch(err){ console.error(err); showFatalError(err); }
