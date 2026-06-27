@@ -92,14 +92,14 @@ function renderAlbum(){
     </div>
     <div class="album-tools panel">
       <input id="searchInput" class="search" placeholder="🔎 Buscar país, 85%, faltan 7, dup 6">
-      <div class="sort-row">
-        <button data-sort="album" class="sort-chip active">Orden álbum</button>
-        <button data-sort="most" class="sort-chip">Más completo</button>
-        <button data-sort="least" class="sort-chip">Menos completo</button>
-        <button data-sort="missing" class="sort-chip">Más faltantes</button>
-        <button data-sort="dups" class="sort-chip">Más dup</button>
+      <div class="sort-row" role="tablist" aria-label="Ordenar álbum">
+        <button data-sort="album" class="sort-chip active">📖 Álbum</button>
+        <button data-sort="az" class="sort-chip">🔤 A-Z</button>
+        <button data-sort="most" class="sort-chip">📈 Progreso</button>
+        <button data-sort="dups" class="sort-chip">🔵 Duplicados</button>
       </div>
     </div>
+    <div id="albumSummary" class="album-summary-row"></div>
     <div id="teamList" class="album-list premium-list"></div>`;
   const input=$('#searchInput');
   input.oninput=()=>drawTeams(input.value);
@@ -132,12 +132,19 @@ function drawTeams(q){
   let teams=state.teams.map((t,i)=>({t,i,c:teamCounts(t)})).filter(x=>matchesSmartQuery(x.t,q));
   const sorters={
     album:(a,b)=>a.i-b.i,
+    az:(a,b)=>a.t.name.localeCompare(b.t.name,'es',{sensitivity:'base'}),
     most:(a,b)=>b.c.pct-a.c.pct||a.i-b.i,
-    least:(a,b)=>a.c.pct-b.c.pct||a.i-b.i,
-    missing:(a,b)=>b.c.missing-a.c.missing||a.i-b.i,
     dups:(a,b)=>b.c.duplicates-a.c.duplicates||a.i-b.i
   };
   teams.sort(sorters[albumSort]||sorters.album);
+  const summary=$('#albumSummary');
+  if(summary){
+    const all=state.teams.map(t=>teamCounts(t));
+    const almost=all.filter(c=>c.pct>=90 && c.pct<100).length;
+    const complete=all.filter(c=>c.pct>=100).length;
+    const highDup=all.filter(c=>c.duplicates>=8).length;
+    summary.innerHTML=`<span><b>${state.teams.length}</b> países</span><span><b>${almost}</b> casi completos</span><span><b>${complete}</b> completos</span><span><b>${highDup}</b> con muchos duplicados</span>`;
+  }
   if(!teams.length){list.innerHTML='<div class="empty panel">No encontré selecciones con esa búsqueda.</div>';return;}
   teams.forEach(({t,c},idx)=>{
     const level=c.pct>=100?'complete':c.pct>=90?'high':c.pct>=70?'mid':'low';

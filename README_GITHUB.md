@@ -1,10 +1,9 @@
-# Road to 980 - V3.4
+# Road to 980 — V3.6 Organización inteligente
 
 Cambios:
-- Se eliminaron las tarjetas inferiores de Faltantes y Duplicados en la pantalla del país.
-- Los filtros superiores ahora son la única forma de ver Todos / Tengo / Faltan / Duplicados.
-- Se simplificaron las fichas: ahora muestran solo el número, el color indica el estado.
-- El texto de modo lectura se reemplazó por un indicador compacto.
-- Caché actualizado a v3.4.
+- Eliminadas opciones duplicadas: Menos completos y Más faltantes.
+- Orden disponible: Álbum, A-Z, Progreso y Duplicados.
+- Resumen rápido sobre la lista de países.
+- Caché actualizado a v3.6.
 
-Sube y reemplaza todos los archivos en GitHub Pages.
+Para actualizar GitHub Pages: sube y reemplaza todos estos archivos en el repo Road-To-980 y haz Commit changes.
