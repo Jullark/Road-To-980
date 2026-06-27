@@ -1,6 +1,6 @@
 'use strict';
 const STORAGE_KEY = 'road_to_980_state_v1';
-const APP_VERSION = '2.3';
+const APP_VERSION = '2.4';
 const $ = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
 
@@ -23,9 +23,11 @@ const FLAG_CODES = {
 };
 function flagMarkup(team){
   const code = team.flagCode || FLAG_CODES[team.name];
-  if(!code) return `<span class="flag-fallback">🏆</span>`;
-  return `<img class="flag-icon" src="https://flagcdn.com/${code}.svg" alt="Bandera de ${team.name}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${team.flag || '🏳️'}'))">`;
+  const fallback = team.name === 'Inglaterra' ? 'ENG' : (team.name === 'Escocia' ? 'SCO' : '🏆');
+  if(!code) return `<span class="flag-fallback">${fallback}</span>`;
+  return `<img class="flag-icon" src="https://flagcdn.com/${code}.svg?v=2.4" alt="Bandera de ${team.name}" loading="lazy" onerror="this.outerHTML='<span class=&quot;flag-fallback&quot;>${fallback}</span>'">`;
 }
+
 
 function loadState(){
   try {
@@ -260,5 +262,5 @@ $('#resetBtn').addEventListener('click', () => {
   if(!unlocked){ toast('Desbloquea con PIN primero'); return; }
   if(confirm('¿Restaurar la lista inicial?')){ appState = cloneInitial(); saveState(); renderAll(); toast('Lista restaurada'); }
 });
-if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('sw.js?v=2.3').catch(()=>{})); }
+if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('sw.js?v=2.4').catch(()=>{})); }
 renderAll();

@@ -11,9 +11,11 @@
 /* V2.3: SVG flags so England and Scotland render correctly on every device */
 .flag{width:42px;min-width:42px;height:32px;display:grid;place-items:center;font-size:0;line-height:1;overflow:hidden;border-radius:8px;background:rgba(102,112,133,.10);box-shadow:0 0 0 1px var(--line)}
 .flag-icon{width:100%;height:100%;object-fit:cover;display:block;border-radius:8px}
-.flag-fallback{font-size:24px;line-height:1}
+.flag-fallback{display:inline-grid;place-items:center;min-width:38px;height:26px;border-radius:7px;background:#f3f4f6;color:#111827;font-weight:900;font-size:12px;border:1px solid #d1d5db;line-height:1}
 .detail-title .flag{width:58px;height:42px;min-width:58px;border-radius:12px}
 .detail-title .flag-icon{border-radius:12px}
 .inline-flag{display:inline-grid;place-items:center;width:28px;height:20px;vertical-align:-4px;margin-right:6px;border-radius:5px;overflow:hidden;box-shadow:0 0 0 1px var(--line);background:rgba(102,112,133,.10)}
 .inline-flag .flag-icon{width:100%;height:100%;object-fit:cover;border-radius:5px}
 .trade-item h3 .inline-flag{margin-right:0}
+
+.inline-flag .flag-fallback{min-width:28px;height:20px;font-size:10px}
