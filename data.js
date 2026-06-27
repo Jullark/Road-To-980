@@ -8,7 +8,6 @@ const INITIAL_DATA = {
     packsOpened: 150,
     stickersPerPack: 7,
     cocaCola: { owned: 12, total: 12, includedInMainProgress: false },
-    ownerPin: "0312",
     updatedAt: "2026-06-27"
   },
   teams: [

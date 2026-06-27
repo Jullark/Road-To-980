@@ -38,7 +38,7 @@ function stickerStatus(team, n){
   return 'owned';
 }
 function cycleSticker(teamName, n){
-  if(!unlocked){ toast('Activa modo dueño con PIN 0312'); return; }
+  if(!unlocked){ toast('Desbloquea modo dueño para editar'); openOwnerDialog(); return; }
   const team = appState.teams.find(t=>t.name===teamName);
   if(!team) return;
   const status = stickerStatus(team,n);
@@ -49,6 +49,7 @@ function cycleSticker(teamName, n){
   // duplicate -> owned
   normalizeTeam(team);
   saveState();
+  refreshOwnerTimer();
   renderAll();
   showTeam(team.name);
 }
@@ -181,15 +182,48 @@ $('#backToAlbum').addEventListener('click', () => setView('album'));
 $('#searchInput').addEventListener('input', renderAlbum);
 $('#clearSearch').addEventListener('click', () => { $('#searchInput').value = ''; renderAlbum(); });
 $$('.segment').forEach(btn => btn.addEventListener('click', () => { currentTradeMode = btn.dataset.trade; $$('.segment').forEach(b=>b.classList.toggle('active', b===btn)); renderTrade(); }));
+let ownerAutoLockTimer = null;
+function expectedOwnerPin(){ return [48,51,49,50].map(c => String.fromCharCode(c)).join(''); }
+function lockOwner(showMessage=true){
+  unlocked = false;
+  $('#ownerToggle').textContent = '🔒 Solo lectura';
+  $('#pinInput').value = '';
+  clearTimeout(ownerAutoLockTimer);
+  if(showMessage) toast('Modo solo lectura');
+}
+function refreshOwnerTimer(){
+  if(!unlocked) return;
+  clearTimeout(ownerAutoLockTimer);
+  ownerAutoLockTimer = setTimeout(() => lockOwner(true), 5 * 60 * 1000);
+}
+function openOwnerDialog(){
+  const input = $('#pinInput');
+  input.value = '';
+  input.setAttribute('value','');
+  $('#pinDialog').showModal();
+  setTimeout(()=>{ input.value = ''; input.focus(); }, 120);
+}
 $('#ownerToggle').addEventListener('click', () => {
-  if(unlocked){ unlocked = false; $('#ownerToggle').textContent = '🔒 Solo lectura'; toast('Modo solo lectura'); return; }
-  $('#pinDialog').showModal(); setTimeout(()=>$('#pinInput').focus(), 80);
+  if(unlocked){ lockOwner(true); return; }
+  openOwnerDialog();
 });
+$('#pinDialog').addEventListener('close', () => { $('#pinInput').value = ''; });
+$('#pinInput').addEventListener('input', () => { $('#pinInput').value = $('#pinInput').value.replace(/\D/g,'').slice(0,4); });
 $('#unlockBtn').addEventListener('click', () => {
-  if($('#pinInput').value === appState.meta.ownerPin){
-    unlocked = true; $('#ownerToggle').textContent = '🔓 Modo dueño'; $('#pinInput').value = ''; $('#pinDialog').close(); toast('Modo dueño activado');
-  } else toast('PIN incorrecto');
+  const input = $('#pinInput');
+  if(input.value === expectedOwnerPin()){
+    unlocked = true;
+    $('#ownerToggle').textContent = '🔓 Editando';
+    input.value = '';
+    $('#pinDialog').close();
+    toast('Modo dueño activado');
+    refreshOwnerTimer();
+  } else {
+    input.value = '';
+    toast('PIN incorrecto');
+  }
 });
+['click','touchstart','keydown'].forEach(evt => document.addEventListener(evt, refreshOwnerTimer, {passive:true}));
 $('#exportBtn').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(appState,null,2)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'road-to-980-respaldo.json'; a.click(); URL.revokeObjectURL(a.href);

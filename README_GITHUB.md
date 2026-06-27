@@ -9,7 +9,7 @@ App PWA para llevar el control del álbum Panini Mundial 2026.
 - Duplicados registrados: 256
 - Total álbum: 980
 - Coca-Cola: 12/12 informativo, no afecta progreso principal
-- PIN dueño: 0312
+- PIN dueño: configurado en la app. No se muestra públicamente.
 
 ## Subir a GitHub Pages
 
@@ -27,6 +27,6 @@ App PWA para llevar el control del álbum Panini Mundial 2026.
 ## Uso
 
 - Público: solo lectura.
-- Dueño: toca el candado e ingresa 0312 para editar.
+- Dueño: toca el candado e ingresa tu PIN para editar.
 - Los cambios se guardan en el navegador.
 - Usa Exportar JSON para respaldo.
