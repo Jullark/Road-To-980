@@ -1,32 +1,18 @@
-# Road to 980
+# Road to 980 - V2.1
 
-App PWA para llevar el control del álbum Panini Mundial 2026.
+Correcciones principales:
 
-## Datos iniciales validados
+- El PIN no aparece en pantalla.
+- El campo del PIN abre vacío y oculto.
+- En modo lectura, tocar stickers NO abre el modal del PIN.
+- Para editar debes tocar el botón superior de modo propietario.
+- PIN propietario: 0312.
+- Datos base: 789 tengo, 191 faltantes, 256 duplicados, 980 total.
 
-- Tengo: 789
-- Faltantes: 191
-- Duplicados registrados: 256
-- Total álbum: 980
-- Coca-Cola: 12/12 informativo, no afecta progreso principal
-- PIN dueño: configurado en la app. No se muestra públicamente.
+## Actualizar GitHub Pages
 
-## Subir a GitHub Pages
-
-1. Entra al repo `Jullark/Road-To-980`.
-2. Presiona **Add file > Upload files**.
-3. Sube todos los archivos de esta carpeta, no el ZIP cerrado.
-4. Presiona **Commit changes**.
-5. Ve a **Settings > Pages**.
-6. Source: **Deploy from a branch**.
-7. Branch: **main** y folder **/ root**.
-8. Guarda.
-9. Abre: `https://jullark.github.io/Road-To-980/`
-10. En iPhone: Safari > Compartir > Agregar a pantalla de inicio.
-
-## Uso
-
-- Público: solo lectura.
-- Dueño: toca el candado e ingresa tu PIN para editar.
-- Los cambios se guardan en el navegador.
-- Usa Exportar JSON para respaldo.
+1. Descomprime este ZIP.
+2. Entra en tu repo Jullark/Road-To-980.
+3. Sube estos archivos reemplazando los actuales.
+4. Haz Commit changes.
+5. Espera 1-3 minutos y recarga el sitio.

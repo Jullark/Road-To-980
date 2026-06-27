@@ -38,7 +38,10 @@ function stickerStatus(team, n){
   return 'owned';
 }
 function cycleSticker(teamName, n){
-  if(!unlocked){ toast('Desbloquea modo dueño para editar'); openOwnerDialog(); return; }
+  if(!unlocked){
+    toast('Modo solo lectura. Usa el botón superior para editar.');
+    return;
+  }
   const team = appState.teams.find(t=>t.name===teamName);
   if(!team) return;
   const status = stickerStatus(team,n);
