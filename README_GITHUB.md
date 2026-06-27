@@ -1,9 +1,13 @@
-# Road to 980 — V3.6 Organización inteligente
+# Road to 980 — V4.0 Universal
 
-Cambios:
-- Eliminadas opciones duplicadas: Menos completos y Más faltantes.
-- Orden disponible: Álbum, A-Z, Progreso y Duplicados.
-- Resumen rápido sobre la lista de países.
-- Caché actualizado a v3.6.
+Versión enfocada en compatibilidad universal.
 
-Para actualizar GitHub Pages: sube y reemplaza todos estos archivos en el repo Road-To-980 y haz Commit changes.
+Incluye:
+- Layout responsive para iPhone, Android, iPad y computadora.
+- En desktop el menú pasa a barra lateral.
+- En iPad/tablet se aprovecha mejor el ancho.
+- Grids adaptables para países y stickers.
+- PWA con caché actualizado a v4.0.
+- Mantiene datos oficiales: 789 tengo, 191 faltantes, 256 duplicados, PIN 0312.
+
+Para actualizar: sube y reemplaza todos los archivos en GitHub y haz commit.
