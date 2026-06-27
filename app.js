@@ -134,7 +134,7 @@ function renderDetail(filter='all'){
   const btns=['all','owned','missing','duplicate'].map(f=>`<button class="${filter===f?'active':''}" data-filter="${f}">${f==='all'?'Todos':f==='owned'?'Tengo':f==='missing'?'Faltan':'Duplicados'}</button>`).join('');
   const stickers=Array.from({length:t.total},(_,i)=>i+1)
     .filter(n=>filter==='all'||status(t,n)===filter)
-    .map(n=>`<button class="sticker ${status(t,n)}" data-n="${n}"><span>${n}</span><small>${statusLabel(status(t,n))}</small></button>`).join('') || `<p class="empty">No hay stickers en este filtro.</p>`;
+    .map(n=>`<button class="sticker ${status(t,n)}" data-n="${n}"><span>${n}</span></button>`).join('') || `<p class="empty">No hay stickers en este filtro.</p>`;
   $('#detailView').innerHTML=`
     <button class="back-btn" id="backAlbum">← Volver al álbum</button>
     <div class="country-hero panel">
@@ -150,13 +150,11 @@ function renderDetail(filter='all'){
         <div class="detail-stat blue"><i>⧉</i><strong>${c.duplicates}</strong><span>Duplicados</span></div>
       </div>
     </div>
-    <div class="panel sticker-panel">
-      <div class="panel-title"><h3>Stickers</h3><p>${unlocked?'Toca un número para cambiarlo.':'Modo lectura activado.'}</p></div>
-      <div class="filters">${btns}</div>
-      <div class="sticker-grid v32">${stickers}</div>
-    </div>
-    <div class="list-panel panel"><h3>Faltantes</h3>${chips(t.missing,'red')}</div>
-    <div class="list-panel panel" style="margin-top:12px"><h3>Duplicados</h3>${chips(t.duplicates,'blue')}</div>`;
+    <div class="panel sticker-panel clean">
+      <div class="panel-title"><h3>Stickers</h3><span class="mode-badge ${unlocked?'editing':'readonly'}">${unlocked?'🔓 Editando':'🔒 Lectura'}</span></div>
+      <div class="filters clean-filters">${btns}</div>
+      <div class="sticker-grid v32 clean-grid">${stickers}</div>
+    </div>`;
   $('#backAlbum').onclick=()=>setView('albumView');
   $$('#detailView [data-filter]').forEach(b=>b.onclick=()=>renderDetail(b.dataset.filter));
   $$('#detailView .sticker').forEach(b=>b.onclick=()=>openStatusSheet(t,Number(b.dataset.n)));

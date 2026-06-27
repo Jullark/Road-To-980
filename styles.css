@@ -31,3 +31,23 @@ button,input{font:inherit}button{cursor:pointer}.app-shell{width:min(520px,100%)
 #tradeView .team-card, #statsView .team-card{display:block}
 #statsView .team-card{width:100%}
 @media(max-width:430px){.team-card{grid-template-columns:58px minmax(0,1fr) 62px;gap:12px;padding:15px}.flag-img{width:50px;height:37px}.team-main h3{font-size:20px}.team-main p{font-size:14px}.pct-pill{min-width:58px;padding:8px 9px}}
+
+
+/* V3.4 clean country detail */
+.sticker-panel.clean{padding:18px;margin-bottom:18px}
+.panel-title{align-items:center}
+.mode-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:7px 10px;font-size:12px;font-weight:950;color:var(--muted);background:rgba(255,255,255,.06);white-space:nowrap}
+.mode-badge.editing{color:#bbf7d0;background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.25)}
+.mode-badge.readonly{color:#cbd5e1;background:rgba(255,255,255,.045)}
+.clean-filters{gap:7px;padding-bottom:12px}
+.clean-filters button{padding:9px 12px;font-size:14px;background:rgba(255,255,255,.055)}
+.clean-filters button.active{color:#06111f;background:#f8fafc;border-color:rgba(255,255,255,.8)}
+.clean-filters button.active[data-filter="all"]{background:linear-gradient(135deg,#f8fafc,#dbeafe);color:#06111f}
+.clean-filters button.active[data-filter="owned"]{background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border-color:rgba(34,197,94,.55)}
+.clean-filters button.active[data-filter="missing"]{background:linear-gradient(135deg,#fb7185,#dc2626);color:white;border-color:rgba(239,68,68,.55)}
+.clean-filters button.active[data-filter="duplicate"]{background:linear-gradient(135deg,#60a5fa,#2563eb);color:white;border-color:rgba(47,128,237,.55)}
+.sticker-grid.v32.clean-grid{gap:10px}
+.sticker-grid.v32.clean-grid .sticker{height:62px;border-radius:20px;gap:0}
+.sticker-grid.v32.clean-grid .sticker span{font-size:30px;letter-spacing:-.03em}
+.sticker-grid.v32.clean-grid .sticker small{display:none}
+@media(max-width:380px){.sticker-grid.v32.clean-grid .sticker{height:56px}.sticker-grid.v32.clean-grid .sticker span{font-size:27px}.clean-filters button{font-size:13px;padding:8px 10px}}
