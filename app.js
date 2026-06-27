@@ -1,5 +1,5 @@
 const KEY='road980-state-v42'; // se conserva para no perder tu colección
-const THEME_KEY='road980-theme-v43';
+const THEME_KEY='road980-theme-v44';
 let albumSort='album';
 const OWNER_HASH='NDAw'; // no muestra el PIN en UI; comprobación simple local
 let state=null;
@@ -12,12 +12,12 @@ const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
 
 const THEMES=[
-  {id:'world',name:'World Cup',desc:'Azul mundial + dorado',preview:'preview-world'},
-  {id:'midnight',name:'Midnight',desc:'Oscuro premium',preview:'preview-midnight'},
-  {id:'snow',name:'Snow',desc:'Claro y minimalista',preview:'preview-snow'},
-  {id:'mexico',name:'México',desc:'Esmeralda + rojo',preview:'preview-mexico'},
-  {id:'usa',name:'USA',desc:'Navy + rojo',preview:'preview-usa'},
-  {id:'canada',name:'Canadá',desc:'Blanco + rojo vino',preview:'preview-canada'}
+  {id:'world',name:'World Cup',desc:'Azul marino + dorado',preview:'preview-world'},
+  {id:'midnight',name:'Midnight',desc:'Grafito premium',preview:'preview-midnight'},
+  {id:'snow',name:'Snow',desc:'Hielo minimalista',preview:'preview-snow'},
+  {id:'mexico',name:'México',desc:'Jade + rojo elegante',preview:'preview-mexico'},
+  {id:'usa',name:'USA',desc:'Navy deportivo',preview:'preview-usa'},
+  {id:'canada',name:'Canadá',desc:'Rojo vino + perla',preview:'preview-canada'}
 ];
 function getTheme(){return localStorage.getItem(THEME_KEY)||'world'}
 function applyTheme(id){
@@ -25,7 +25,7 @@ function applyTheme(id){
   document.documentElement.setAttribute('data-theme',theme);
   localStorage.setItem(THEME_KEY,theme);
   const meta=document.querySelector('meta[name="theme-color"]');
-  const colors={world:'#0b2a4a',midnight:'#080b12',snow:'#eef6ff',mexico:'#f7fbf8',usa:'#f5f8ff',canada:'#fff5f5'};
+  const colors={world:'#071E3D',midnight:'#070A12',snow:'#F3F6FA',mexico:'#F4FBF7',usa:'#EEF4FF',canada:'#FFF6F7'};
   if(meta) meta.setAttribute('content',colors[theme]||colors.world);
 }
 function renderThemeOptions(){
