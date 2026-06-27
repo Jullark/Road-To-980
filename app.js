@@ -1,5 +1,6 @@
 'use strict';
 const STORAGE_KEY = 'road_to_980_state_v1';
+const APP_VERSION = '2.3';
 const $ = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
 
@@ -7,6 +8,24 @@ let appState = loadState();
 let unlocked = false;
 let currentTeamName = null;
 let currentTradeMode = 'missing';
+
+const FLAG_CODES = {
+  "México":"mx", "Sudáfrica":"za", "Corea del Sur":"kr", "Rp Checa":"cz", "Canadá":"ca",
+  "Bosnia y Hercegovina":"ba", "Qatar":"qa", "Suiza":"ch", "Brasil":"br", "Marruecos":"ma",
+  "Haití":"ht", "Escocia":"gb-sct", "EEUU":"us", "Paraguay":"py", "Australia":"au",
+  "Turquía":"tr", "Alemania":"de", "Curazao":"cw", "Costa de Marfil":"ci", "Ecuador":"ec",
+  "Holanda":"nl", "Japón":"jp", "Suecia":"se", "Tunisia":"tn", "Bélgica":"be",
+  "Egipto":"eg", "Irán":"ir", "Nueva Zelanda":"nz", "España":"es", "Cabo Verde":"cv",
+  "Arabia Saudita":"sa", "Uruguay":"uy", "Francia":"fr", "Senegal":"sn", "Iraq":"iq",
+  "Noruega":"no", "Argentina":"ar", "Algeria":"dz", "Austria":"at", "Jordania":"jo",
+  "Portugal":"pt", "Rp Congo":"cd", "Uzbekistán":"uz", "Colombia":"co", "Inglaterra":"gb-eng",
+  "Croacia":"hr", "Ghana":"gh", "Panamá":"pa"
+};
+function flagMarkup(team){
+  const code = team.flagCode || FLAG_CODES[team.name];
+  if(!code) return `<span class="flag-fallback">🏆</span>`;
+  return `<img class="flag-icon" src="https://flagcdn.com/${code}.svg" alt="Bandera de ${team.name}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${team.flag || '🏳️'}'))">`;
+}
 
 function loadState(){
   try {
@@ -39,7 +58,7 @@ function stickerStatus(team, n){
 }
 function cycleSticker(teamName, n){
   if(!unlocked){
-    toast('Modo solo lectura. Usa el botón superior para editar.');
+    toast('Modo solo lectura.');
     return;
   }
   const team = appState.teams.find(t=>t.name===teamName);
@@ -114,7 +133,7 @@ function renderAlbum(){
       const btn = document.createElement('button');
       btn.className = 'team-card';
       btn.type = 'button';
-      btn.innerHTML = `<div class="flag">${team.flag}</div><main><h3>${team.name}</h3><div class="sub">${owned}/20 · faltan ${team.missing.length} · dup ${countDuplicates(team)}</div><div class="mini-bar"><span style="width:${pct}%"></span></div></main><div class="count-pill">${pct.toFixed(0)}%</div>`;
+      btn.innerHTML = `<div class="flag">${flagMarkup(team)}</div><main><h3>${team.name}</h3><div class="sub">${owned}/20 · faltan ${team.missing.length} · dup ${countDuplicates(team)}</div><div class="mini-bar"><span style="width:${pct}%"></span></div></main><div class="count-pill">${pct.toFixed(0)}%</div>`;
       btn.addEventListener('click', () => showTeam(team.name));
       list.appendChild(btn);
     });
@@ -132,7 +151,7 @@ function showTeam(name){
   }).join('');
   $('#detailRoot').innerHTML = `
     <article class="card detail-head">
-      <div class="detail-title"><div class="flag">${team.flag}</div><div><p class="eyebrow">Detalle</p><h2 id="detailTitle">${team.name}</h2></div></div>
+      <div class="detail-title"><div class="flag">${flagMarkup(team)}</div><div><p class="eyebrow">Detalle</p><h2 id="detailTitle">${team.name}</h2></div></div>
       <div class="detail-metrics">
         <div class="mini-card"><strong>${owned}</strong><span>Tengo</span></div>
         <div class="mini-card"><strong>${team.missing.length}</strong><span>Faltan</span></div>
@@ -160,7 +179,7 @@ function renderTrade(){
     const content = isMissing ? chips(team.missing, 'red') : duplicateChips(team);
     const count = isMissing ? team.missing.length : countDuplicates(team);
     if(count === 0) return '';
-    return `<article class="trade-item"><h3><span>${team.flag}</span>${team.name}</h3><div class="chips">${content}</div></article>`;
+    return `<article class="trade-item"><h3><span class="inline-flag">${flagMarkup(team)}</span>${team.name}</h3><div class="chips">${content}</div></article>`;
   }).join('');
 }
 function renderStats(){
@@ -171,9 +190,9 @@ function renderStats(){
   $('#statsRoot').innerHTML = `
     <div class="stat-row"><span>Progreso</span><b>${t.owned}/${t.total}</b></div>
     <div class="stat-row"><span>Porcentaje</span><b>${t.percent.toFixed(1)}%</b></div>
-    <div class="stat-row"><span>Más completo</span><b>${byComplete.flag} ${byComplete.name}</b></div>
-    <div class="stat-row"><span>Más faltantes</span><b>${byMissing.flag} ${byMissing.name} (${byMissing.missing.length})</b></div>
-    <div class="stat-row"><span>Más duplicados</span><b>${byDup.flag} ${byDup.name} (${countDuplicates(byDup)})</b></div>
+    <div class="stat-row"><span>Más completo</span><b><span class="inline-flag">${flagMarkup(byComplete)}</span> ${byComplete.name}</b></div>
+    <div class="stat-row"><span>Más faltantes</span><b><span class="inline-flag">${flagMarkup(byMissing)}</span> ${byMissing.name} (${byMissing.missing.length})</b></div>
+    <div class="stat-row"><span>Más duplicados</span><b><span class="inline-flag">${flagMarkup(byDup)}</span> ${byDup.name} (${countDuplicates(byDup)})</b></div>
     <div class="stat-row"><span>Coca-Cola</span><b>${appState.meta.cocaCola.owned}/${appState.meta.cocaCola.total}</b></div>
   `;
 }
@@ -241,5 +260,5 @@ $('#resetBtn').addEventListener('click', () => {
   if(!unlocked){ toast('Desbloquea con PIN primero'); return; }
   if(confirm('¿Restaurar la lista inicial?')){ appState = cloneInitial(); saveState(); renderAll(); toast('Lista restaurada'); }
 });
-if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('sw.js?v=2.3').catch(()=>{})); }
 renderAll();

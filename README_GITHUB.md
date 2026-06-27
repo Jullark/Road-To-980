@@ -16,3 +16,14 @@ Correcciones principales:
 3. Sube estos archivos reemplazando los actuales.
 4. Haz Commit changes.
 5. Espera 1-3 minutos y recarga el sitio.
+
+
+## V2.2
+- Corregido: en modo lectura, tocar stickers NO abre el PIN.
+- El PIN solo se abre desde el botón superior.
+- Cache actualizado para que GitHub Pages no siga mostrando la versión vieja.
+
+
+## V2.3
+- Banderas cambiadas a SVG externas para corregir Inglaterra y Escocia en iPhone.
+- Cache actualizado a v2.3.
