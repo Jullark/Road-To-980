@@ -1,11 +1,11 @@
-const CACHE = 'road-to-980-v2-4-flags-cachefix';
-const ASSETS = ['./', './index.html', './styles.css?v=2.4', './data.js?v=2.4', './app.js?v=2.4', './manifest.webmanifest', './assets/icons/icon-192.svg', './assets/icons/icon-512.svg'];
+const CACHE = 'road-to-980-v3-0-premium-ui';
+const ASSETS = ['./', './index.html', './styles.css?v=3.0', './data.js?v=3.0', './app.js?v=3.0', './manifest.webmanifest', './assets/icons/icon-192.svg', './assets/icons/icon-512.svg'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', event => {
   if(event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-  const isAppFile = url.pathname.endsWith('/') || ['index.html','styles.css','data.js','app.js','sw.js'].some(file => url.pathname.endsWith(file));
+  const isAppFile = url.pathname.endsWith('/') || ['index.html','styles.css','data.js','app.js','sw.js','manifest.webmanifest'].some(file => url.pathname.endsWith(file));
   if(isAppFile){
     event.respondWith(fetch(event.request, {cache:'no-store'}).then(res => { const copy=res.clone(); caches.open(CACHE).then(c=>c.put(event.request, copy)); return res; }).catch(()=>caches.match(event.request).then(cached=>cached || caches.match('./index.html'))));
   }

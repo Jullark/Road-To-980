@@ -1,6 +1,6 @@
 'use strict';
 const STORAGE_KEY = 'road_to_980_state_v1';
-const APP_VERSION = '2.4';
+const APP_VERSION = '2.5';
 const $ = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
 
@@ -21,11 +21,25 @@ const FLAG_CODES = {
   "Portugal":"pt", "Rp Congo":"cd", "Uzbekistán":"uz", "Colombia":"co", "Inglaterra":"gb-eng",
   "Croacia":"hr", "Ghana":"gh", "Panamá":"pa"
 };
+function localFlagSVG(teamName){
+  if(teamName === 'Inglaterra'){
+    return `<span class="flag-local" role="img" aria-label="Bandera de Inglaterra"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"><rect width="60" height="40" fill="#fff"/><rect x="25" width="10" height="40" fill="#cf142b"/><rect y="15" width="60" height="10" fill="#cf142b"/></svg></span>`;
+  }
+  if(teamName === 'Escocia'){
+    return `<span class="flag-local" role="img" aria-label="Bandera de Escocia"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"><rect width="60" height="40" fill="#0065bd"/><path d="M0 0 60 40M60 0 0 40" stroke="#fff" stroke-width="7"/></svg></span>`;
+  }
+  if(teamName === 'FWC'){
+    return `<span class="flag-local trophy" role="img" aria-label="FWC">🏆</span>`;
+  }
+  return '';
+}
 function flagMarkup(team){
+  const local = localFlagSVG(team.name);
+  if(local) return local;
   const code = team.flagCode || FLAG_CODES[team.name];
-  const fallback = team.name === 'Inglaterra' ? 'ENG' : (team.name === 'Escocia' ? 'SCO' : '🏆');
+  const fallback = team.flag || '🏳️';
   if(!code) return `<span class="flag-fallback">${fallback}</span>`;
-  return `<img class="flag-icon" src="https://flagcdn.com/${code}.svg?v=2.4" alt="Bandera de ${team.name}" loading="lazy" onerror="this.outerHTML='<span class=&quot;flag-fallback&quot;>${fallback}</span>'">`;
+  return `<img class="flag-icon" src="https://flagcdn.com/${code}.svg?v=2.5" alt="Bandera de ${team.name}" loading="lazy" onerror="this.outerHTML='<span class=&quot;flag-fallback&quot;>${fallback}</span>'">`;
 }
 
 
@@ -262,5 +276,5 @@ $('#resetBtn').addEventListener('click', () => {
   if(!unlocked){ toast('Desbloquea con PIN primero'); return; }
   if(confirm('¿Restaurar la lista inicial?')){ appState = cloneInitial(); saveState(); renderAll(); toast('Lista restaurada'); }
 });
-if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('sw.js?v=2.4').catch(()=>{})); }
+if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('sw.js?v=2.5').catch(()=>{})); }
 renderAll();
