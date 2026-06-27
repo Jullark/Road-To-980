@@ -1,4 +1,5 @@
 const KEY='road980-state-v31'; // se mantiene para no perder cambios locales
+let albumSort='album';
 const OWNER_HASH='NDAw'; // no muestra el PIN en UI; comprobación simple local
 let state=loadState();
 let currentTeam=null;
@@ -81,19 +82,75 @@ function renderHome(){
   $$('#homeView [data-go]').forEach(b=>b.onclick=()=>setView(b.dataset.go));
 }
 function renderAlbum(){
-  $('#albumView').innerHTML=`<div class="section-head"><h2>Países</h2><button class="clear-btn" id="clearSearch">Limpiar</button></div><input id="searchInput" class="search" placeholder="🔎 Buscar país o número"></div><div id="teamList"></div>`;
+  $('#albumView').innerHTML=`
+    <div class="section-head album-head">
+      <div>
+        <h2>Álbum</h2>
+        <p class="album-subtitle">Filtra, ordena y ubica rápido cada selección.</p>
+      </div>
+      <button class="clear-btn" id="clearSearch">Limpiar</button>
+    </div>
+    <div class="album-tools panel">
+      <input id="searchInput" class="search" placeholder="🔎 Buscar país, 85%, faltan 7, dup 6">
+      <div class="sort-row">
+        <button data-sort="album" class="sort-chip active">Orden álbum</button>
+        <button data-sort="most" class="sort-chip">Más completo</button>
+        <button data-sort="least" class="sort-chip">Menos completo</button>
+        <button data-sort="missing" class="sort-chip">Más faltantes</button>
+        <button data-sort="dups" class="sort-chip">Más dup</button>
+      </div>
+    </div>
+    <div id="teamList" class="album-list premium-list"></div>`;
   const input=$('#searchInput');
   input.oninput=()=>drawTeams(input.value);
   $('#clearSearch').onclick=()=>{input.value='';drawTeams('')};
+  $$('#albumView [data-sort]').forEach(btn=>btn.onclick=()=>{
+    albumSort=btn.dataset.sort;
+    $$('#albumView [data-sort]').forEach(b=>b.classList.toggle('active',b.dataset.sort===albumSort));
+    drawTeams(input.value);
+  });
   drawTeams('');
 }
+function matchesSmartQuery(t,raw){
+  const q=(raw||'').trim().toLowerCase();
+  if(!q) return true;
+  const c=teamCounts(t), pct=Math.round(c.pct);
+  const normalized=t.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const nq=q.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(normalized.includes(nq)) return true;
+  const n=(q.match(/\d+/)||[])[0];
+  if(q.includes('%') && n) return pct===Number(n);
+  if((q.includes('falt')||q.includes('miss')) && n) return c.missing===Number(n);
+  if((q.includes('dup')||q.includes('repet')) && n) return c.duplicates===Number(n);
+  if((q.includes('tengo')||q.includes('owned')) && n) return c.owned===Number(n);
+  if(/^\d+$/.test(q)) return pct===Number(q)||c.missing===Number(q)||c.duplicates===Number(q)||c.owned===Number(q)||t.missing.includes(Number(q))||t.duplicates.includes(Number(q));
+  return false;
+}
 function drawTeams(q){
-  q=(q||'').trim().toLowerCase();
-  const list=$('#teamList'); list.innerHTML='';
-  state.teams.filter(t=>!q||t.name.toLowerCase().includes(q)).forEach(t=>{
-    const c=teamCounts(t), cls=c.pct<50?'low':c.pct<90?'mid':'';
-    const card=document.createElement('button'); card.className='team-card';
-    card.innerHTML=`${flagImg(t)}<div class="team-main"><h3>${t.name}</h3><p>${c.owned}/${t.total} · faltan ${c.missing} · dup ${c.duplicates}</p><div class="team-bar"><span style="width:${c.pct}%"></span></div></div><div class="pct-pill ${cls}">${Math.round(c.pct)}%</div>`;
+  const list=$('#teamList'); if(!list) return;
+  list.innerHTML='';
+  let teams=state.teams.map((t,i)=>({t,i,c:teamCounts(t)})).filter(x=>matchesSmartQuery(x.t,q));
+  const sorters={
+    album:(a,b)=>a.i-b.i,
+    most:(a,b)=>b.c.pct-a.c.pct||a.i-b.i,
+    least:(a,b)=>a.c.pct-b.c.pct||a.i-b.i,
+    missing:(a,b)=>b.c.missing-a.c.missing||a.i-b.i,
+    dups:(a,b)=>b.c.duplicates-a.c.duplicates||a.i-b.i
+  };
+  teams.sort(sorters[albumSort]||sorters.album);
+  if(!teams.length){list.innerHTML='<div class="empty panel">No encontré selecciones con esa búsqueda.</div>';return;}
+  teams.forEach(({t,c},idx)=>{
+    const level=c.pct>=100?'complete':c.pct>=90?'high':c.pct>=70?'mid':'low';
+    const card=document.createElement('button');
+    card.className=`team-card album-premium ${level}`;
+    card.style.setProperty('--delay', `${Math.min(idx,8)*28}ms`);
+    card.innerHTML=`
+      <div class="flag-wrap">${flagImg(t)}</div>
+      <div class="team-main">
+        <div class="team-title-row"><h3>${t.name}</h3><span class="progress-tag ${level}">${c.pct>=100?'🏆 ':''}${Math.round(c.pct)}%</span></div>
+        <div class="team-meta"><span class="ok">${c.owned} tengo</span><span>${c.missing} faltan</span><span>${c.duplicates} dup</span></div>
+        <div class="team-bar premium"><span style="width:${c.pct}%"></span></div>
+      </div>`;
     card.onclick=()=>openTeam(t.name);
     list.appendChild(card);
   });

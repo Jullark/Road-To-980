@@ -1,5 +1,5 @@
 window.ROAD980_DATA = {
-  version: '3.1',
+  version: '3.5',
   summary: { albumTotal: 980, owned: 789, missing: 191, duplicates: 256, packs: 150, coke: '12/12', pinHashHint: 'local-only' },
   teams: [
     {name:'México',code:'mx',total:20,missing:[3,5,7,8,14,16,17],duplicates:[4,9,11,18,20]},
