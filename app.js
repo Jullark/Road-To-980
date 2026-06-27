@@ -62,7 +62,6 @@ function renderHome(){
         <div>
           <h1>Tu álbum mundial</h1>
           <p>${c.owned} / ${c.total} stickers registrados. Coca-Cola 12/12 se muestra solo como dato informativo.</p>
-          <div class="bar"><span style="width:${pct}%"></span></div>
         </div>
       </div>
     </div>
@@ -201,6 +200,6 @@ function bind(){
     closeStatusSheet();
     if(team){ setStickerStatus(team,n,chosen); if(navigator.vibrate) navigator.vibrate(12); }
   });
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=3.2').catch(()=>{});
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=3.3').catch(()=>{});
 }
 renderAll(); bind();
