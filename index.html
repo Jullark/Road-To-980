@@ -1,116 +1,59 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#08111f" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Road 980" />
-  <title>Road to 980 V3</title>
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=3.0" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07131f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Road 980">
+  <title>Road to 980</title>
+  <link rel="manifest" href="manifest.webmanifest?v=3.1">
+  <link rel="stylesheet" href="styles.css?v=3.1">
 </head>
 <body>
-  <div id="toast" class="toast" aria-live="polite"></div>
-  <div class="shell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">26</div>
-        <div>
-          <p class="eyebrow">Mundial 2026</p>
-          <h1>Road to 980</h1>
-        </div>
+  <div id="app" class="app-shell">
+    <header class="app-header">
+      <div class="brand-mark">26</div>
+      <div class="brand-copy">
+        <span>Mundial 2026</span>
+        <strong>Road to 980</strong>
       </div>
-      <button id="ownerToggle" class="owner-btn" type="button">🔒 Solo lectura</button>
+      <button id="ownerBtn" class="owner-btn" aria-label="Modo propietario">🔒</button>
     </header>
 
-    <main>
-      <section id="view-home" class="view active" aria-labelledby="home-title">
-        <div class="hero-card">
-          <div class="progress-ring" id="progressRing"><div><strong id="progressPct">0%</strong><span>completado</span></div></div>
-          <div class="hero-copy">
-            <p class="eyebrow">Progreso principal</p>
-            <h2 id="home-title">789 / 980</h2>
-            <p class="muted">Coca-Cola 12/12 registrada aparte, sin afectar el progreso.</p>
-          </div>
-        </div>
-
-        <div class="metric-grid">
-          <article class="metric green"><span>Tengo</span><strong id="metricOwned">789</strong></article>
-          <article class="metric red"><span>Faltan</span><strong id="metricMissing">191</strong></article>
-          <article class="metric blue"><span>Duplicados</span><strong id="metricDupes">256</strong></article>
-          <article class="metric gold"><span>Sobres</span><strong>150</strong></article>
-        </div>
-
-        <div class="quick-grid">
-          <button data-goto="album" class="quick-card"><span>🌎</span><b>Álbum</b><small>Lista por país</small></button>
-          <button data-goto="trade" class="quick-card"><span>🤝</span><b>Intercambio</b><small>Faltantes y repetidos</small></button>
-          <button data-goto="stats" class="quick-card"><span>📊</span><b>Stats</b><small>Resumen completo</small></button>
-        </div>
-
-        <div id="validationPanel" class="note"></div>
-      </section>
-
-      <section id="view-album" class="view" aria-labelledby="album-title">
-        <div class="section-head">
-          <div><p class="eyebrow">Orden del álbum</p><h2 id="album-title">Países</h2></div>
-          <button id="clearSearch" class="ghost" type="button">Limpiar</button>
-        </div>
-        <label class="search-box"><span>🔎</span><input id="searchInput" type="search" placeholder="Buscar país o sticker #" /></label>
-        <div id="teamList" class="team-list"></div>
-      </section>
-
-      <section id="view-detail" class="view" aria-labelledby="detailTitle">
-        <button id="backToAlbum" class="back-btn" type="button">← Volver al álbum</button>
-        <div id="detailRoot"></div>
-      </section>
-
-      <section id="view-trade" class="view" aria-labelledby="trade-title">
-        <div class="section-head"><div><p class="eyebrow">Modo rápido</p><h2 id="trade-title">Intercambio</h2></div></div>
-        <div class="segmented" role="tablist">
-          <button class="segment active" data-trade="missing" type="button">Me faltan</button>
-          <button class="segment" data-trade="duplicates" type="button">Tengo repetidos</button>
-        </div>
-        <div id="tradeList"></div>
-      </section>
-
-      <section id="view-stats" class="view" aria-labelledby="stats-title">
-        <div class="section-head"><div><p class="eyebrow">Resumen</p><h2 id="stats-title">Estadísticas</h2></div></div>
-        <div id="statsRoot" class="stats-root"></div>
-        <div class="settings-card">
-          <h3>Respaldo</h3>
-          <p class="muted">Tus cambios se guardan en este navegador. Exporta un respaldo si vas a cambiar de teléfono.</p>
-          <div class="settings-actions">
-            <button id="exportBtn" type="button">Exportar JSON</button>
-            <label class="file-btn">Importar JSON<input id="importFile" type="file" accept="application/json" /></label>
-            <button id="resetBtn" type="button" class="danger">Restaurar inicial</button>
-          </div>
-        </div>
-      </section>
+    <main class="view-wrap">
+      <section id="homeView" class="view active"></section>
+      <section id="albumView" class="view"></section>
+      <section id="detailView" class="view"></section>
+      <section id="tradeView" class="view"></section>
+      <section id="statsView" class="view"></section>
     </main>
+
+    <nav class="bottom-nav">
+      <button data-view="homeView" class="active"><span>🏠</span><b>Inicio</b></button>
+      <button data-view="albumView"><span>🌎</span><b>Álbum</b></button>
+      <button data-view="tradeView"><span>🤝</span><b>Trade</b></button>
+      <button data-view="statsView"><span>📊</span><b>Stats</b></button>
+    </nav>
   </div>
 
-  <nav class="bottom-nav" aria-label="Navegación principal">
-    <button class="nav-btn active" data-view="home" type="button">🏠<span>Inicio</span></button>
-    <button class="nav-btn" data-view="album" type="button">🌎<span>Álbum</span></button>
-    <button class="nav-btn" data-view="trade" type="button">🤝<span>Trade</span></button>
-    <button class="nav-btn" data-view="stats" type="button">📊<span>Stats</span></button>
-  </nav>
-
-  <dialog id="pinDialog" class="pin-dialog">
-    <form method="dialog" class="pin-card">
-      <h2>Modo dueño</h2>
-      <p class="muted">Ingresa el PIN para poder cambiar stickers.</p>
-      <input id="pinInput" type="password" inputmode="numeric" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="4" placeholder="••••" aria-label="PIN de propietario" />
-      <div class="dialog-actions">
-        <button value="cancel" type="submit">Cancelar</button>
-        <button id="unlockBtn" value="default" type="button">Desbloquear</button>
+  <div id="pinModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-icon">🔒</div>
+      <h2>Modo propietario</h2>
+      <p>Ingresa el PIN para editar tu colección.</p>
+      <input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password" autocorrect="off" spellcheck="false" placeholder="••••">
+      <div class="modal-actions">
+        <button id="cancelPin" class="ghost">Cancelar</button>
+        <button id="unlockPin" class="primary">Desbloquear</button>
       </div>
-    </form>
-  </dialog>
+    </div>
+  </div>
 
-  <script src="data.js?v=3.0"></script>
-  <script src="app.js?v=3.0"></script>
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="data.js?v=3.1"></script>
+  <script src="app.js?v=3.1"></script>
 </body>
 </html>

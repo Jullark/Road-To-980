@@ -1,280 +1,164 @@
-'use strict';
-const STORAGE_KEY = 'road_to_980_state_v1';
-const APP_VERSION = '2.5';
-const $ = (sel, root=document) => root.querySelector(sel);
-const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+const KEY='road980-state-v31';
+const OWNER_HASH='NDAw'; // no muestra el PIN en UI; comprobación simple local
+let state=loadState();
+let currentTeam=null;
+let unlocked=false;
+let lockTimer=null;
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
 
-let appState = loadState();
-let unlocked = false;
-let currentTeamName = null;
-let currentTradeMode = 'missing';
-
-const FLAG_CODES = {
-  "México":"mx", "Sudáfrica":"za", "Corea del Sur":"kr", "Rp Checa":"cz", "Canadá":"ca",
-  "Bosnia y Hercegovina":"ba", "Qatar":"qa", "Suiza":"ch", "Brasil":"br", "Marruecos":"ma",
-  "Haití":"ht", "Escocia":"gb-sct", "EEUU":"us", "Paraguay":"py", "Australia":"au",
-  "Turquía":"tr", "Alemania":"de", "Curazao":"cw", "Costa de Marfil":"ci", "Ecuador":"ec",
-  "Holanda":"nl", "Japón":"jp", "Suecia":"se", "Tunisia":"tn", "Bélgica":"be",
-  "Egipto":"eg", "Irán":"ir", "Nueva Zelanda":"nz", "España":"es", "Cabo Verde":"cv",
-  "Arabia Saudita":"sa", "Uruguay":"uy", "Francia":"fr", "Senegal":"sn", "Iraq":"iq",
-  "Noruega":"no", "Argentina":"ar", "Algeria":"dz", "Austria":"at", "Jordania":"jo",
-  "Portugal":"pt", "Rp Congo":"cd", "Uzbekistán":"uz", "Colombia":"co", "Inglaterra":"gb-eng",
-  "Croacia":"hr", "Ghana":"gh", "Panamá":"pa"
-};
-function localFlagSVG(teamName){
-  if(teamName === 'Inglaterra'){
-    return `<span class="flag-local" role="img" aria-label="Bandera de Inglaterra"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"><rect width="60" height="40" fill="#fff"/><rect x="25" width="10" height="40" fill="#cf142b"/><rect y="15" width="60" height="10" fill="#cf142b"/></svg></span>`;
-  }
-  if(teamName === 'Escocia'){
-    return `<span class="flag-local" role="img" aria-label="Bandera de Escocia"><svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"><rect width="60" height="40" fill="#0065bd"/><path d="M0 0 60 40M60 0 0 40" stroke="#fff" stroke-width="7"/></svg></span>`;
-  }
-  if(teamName === 'FWC'){
-    return `<span class="flag-local trophy" role="img" aria-label="FWC">🏆</span>`;
-  }
-  return '';
-}
-function flagMarkup(team){
-  const local = localFlagSVG(team.name);
-  if(local) return local;
-  const code = team.flagCode || FLAG_CODES[team.name];
-  const fallback = team.flag || '🏳️';
-  if(!code) return `<span class="flag-fallback">${fallback}</span>`;
-  return `<img class="flag-icon" src="https://flagcdn.com/${code}.svg?v=2.5" alt="Bandera de ${team.name}" loading="lazy" onerror="this.outerHTML='<span class=&quot;flag-fallback&quot;>${fallback}</span>'">`;
-}
-
-
+function clone(o){return JSON.parse(JSON.stringify(o));}
 function loadState(){
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if(saved) return JSON.parse(saved);
-  } catch(e) { console.warn('Cannot load saved state', e); }
-  return structuredClone(INITIAL_DATA);
+  const saved=localStorage.getItem(KEY);
+  if(saved){try{return JSON.parse(saved)}catch(e){}}
+  return clone(window.ROAD980_DATA);
 }
-function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); }
-function cloneInitial(){ return structuredClone(INITIAL_DATA); }
-function countDuplicates(team){ return team.duplicates.length; }
-function uniqueOwned(team){ return 20 - team.missing.length; }
-function totals(){
-  const missing = appState.teams.reduce((sum,t)=>sum + t.missing.length,0);
-  const duplicates = appState.teams.reduce((sum,t)=>sum + t.duplicates.length,0);
-  const owned = appState.meta.albumTotal - missing;
-  return { missing, duplicates, owned, total: appState.meta.albumTotal, percent: owned / appState.meta.albumTotal * 100 };
+function save(){localStorage.setItem(KEY,JSON.stringify(state));}
+function counts(){
+  const missing=state.teams.reduce((a,t)=>a+t.missing.length,0);
+  const duplicates=state.teams.reduce((a,t)=>a+t.duplicates.length,0);
+  const owned=state.summary.albumTotal-missing;
+  return {owned,missing,duplicates,total:state.summary.albumTotal,packs:state.summary.packs};
 }
-function normalizeTeam(team){
-  team.missing = [...new Set(team.missing)].sort((a,b)=>a-b);
-  team.duplicates = team.duplicates.filter(n=>Number.isInteger(n) && n>=1 && n<=20);
+function teamCounts(t){
+  const missing=t.missing.length, duplicates=t.duplicates.length, owned=t.total-missing;
+  return {owned,missing,duplicates,pct:owned/t.total*100};
 }
-function duplicateMap(team){
-  return team.duplicates.reduce((map,n)=>{ map[n]=(map[n]||0)+1; return map; },{});
+function flagSrc(code){
+  const special={
+    england:'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="white"/><rect x="25" width="10" height="40" fill="#ce1124"/><rect y="15" width="60" height="10" fill="#ce1124"/></svg>`),
+    scotland:'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#005eb8"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="white" stroke-width="8"/></svg>`),
+    fwc:'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" rx="6" fill="#f8fafc"/><text x="30" y="26" text-anchor="middle" font-size="20">🏆</text></svg>`)
+  };
+  return special[code] || `https://flagcdn.com/w80/${code}.png`;
 }
-function stickerStatus(team, n){
-  if(team.missing.includes(n)) return 'missing';
-  if(team.duplicates.includes(n)) return 'duplicate';
-  return 'owned';
+function flagImg(t){return `<img class="flag-img" src="${flagSrc(t.code)}" alt="${t.name}" loading="lazy" onerror="this.src='${flagSrc('fwc')}'">`;}
+function setView(id){
+  $$('.view').forEach(v=>v.classList.toggle('active',v.id===id));
+  $$('.bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
+  window.scrollTo({top:0,behavior:'smooth'});
 }
-function cycleSticker(teamName, n){
-  if(!unlocked){
-    toast('Modo solo lectura.');
-    return;
-  }
-  const team = appState.teams.find(t=>t.name===teamName);
-  if(!team) return;
-  const status = stickerStatus(team,n);
-  team.missing = team.missing.filter(x=>x!==n);
-  team.duplicates = team.duplicates.filter(x=>x!==n);
-  if(status === 'owned') team.missing.push(n);
-  if(status === 'missing') team.duplicates.push(n);
-  // duplicate -> owned
-  normalizeTeam(team);
-  saveState();
-  refreshOwnerTimer();
-  renderAll();
-  showTeam(team.name);
+function showToast(msg){
+  const el=$('#toast'); el.textContent=msg; el.classList.remove('hidden');
+  clearTimeout(showToast.t); showToast.t=setTimeout(()=>el.classList.add('hidden'),1600);
 }
-function toast(message){
-  const t = $('#toast');
-  t.textContent = message;
-  t.classList.add('show');
-  clearTimeout(toast._timer);
-  toast._timer = setTimeout(()=>t.classList.remove('show'), 1800);
+function resetLockTimer(){
+  if(!unlocked)return;
+  clearTimeout(lockTimer);
+  lockTimer=setTimeout(()=>{unlocked=false; updateOwnerBtn(); showToast('Modo lectura activado');},5*60*1000);
 }
-function setView(name){
-  $$('.view').forEach(v=>v.classList.toggle('active', v.id === `view-${name}`));
-  $$('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.view === name));
-  if(name !== 'detail') currentTeamName = null;
-  window.scrollTo({top:0, behavior:'smooth'});
+function updateOwnerBtn(){
+  const b=$('#ownerBtn'); b.textContent=unlocked?'🔓':'🔒'; b.classList.toggle('editing',unlocked); b.setAttribute('aria-label',unlocked?'Editando':'Modo propietario');
 }
+function verifyPin(v){ return btoa(String(Number(v)+88))===OWNER_HASH; }
 function renderHome(){
-  const t = totals();
-  $('#progressPct').textContent = `${t.percent.toFixed(1)}%`;
-  $('#progressRing').style.setProperty('--p', t.percent.toFixed(2));
-  $('.hero-copy h2').textContent = `${t.owned} / ${t.total}`;
-  $('#metricOwned').textContent = t.owned;
-  $('#metricMissing').textContent = t.missing;
-  $('#metricDupes').textContent = t.duplicates;
-  const conflicts = findConflicts();
-  $('#validationPanel').innerHTML = conflicts.length
-    ? `<b>Revisar:</b> ${conflicts.join('<br>')}`
-    : `Base validada: <b>${t.owned}</b> tengo + <b>${t.missing}</b> faltantes = <b>${t.total}</b>. Duplicados registrados: <b>${t.duplicates}</b>. Coca-Cola: <b>12/12</b> informativo.`;
-}
-function findConflicts(){
-  const problems = [];
-  appState.teams.forEach(team=>{
-    const miss = new Set(team.missing);
-    const dupUnique = new Set(team.duplicates);
-    [...miss].filter(n=>dupUnique.has(n)).forEach(n=>problems.push(`${team.name} #${n} aparece como faltante y duplicado.`));
-    [...miss].filter(n=>n<1||n>20).forEach(n=>problems.push(`${team.name} #${n} fuera de rango.`));
-  });
-  const t = totals();
-  if(t.missing !== appState.meta.missingTotal) problems.push(`Faltantes esperados ${appState.meta.missingTotal}, actual ${t.missing}.`);
-  if(t.duplicates !== appState.meta.duplicateTotal) problems.push(`Duplicados esperados ${appState.meta.duplicateTotal}, actual ${t.duplicates}.`);
-  if(t.owned !== appState.meta.ownedTotal) problems.push(`Tengo esperado ${appState.meta.ownedTotal}, actual ${t.owned}.`);
-  return problems;
+  const c=counts(), pct=c.owned/c.total*100;
+  $('#homeView').innerHTML=`
+    <div class="hero-card">
+      <div class="progress-row">
+        <div class="ring" style="--p:${pct}"><div><strong>${pct.toFixed(1)}%</strong><small>completado</small></div></div>
+        <div>
+          <h1>Tu álbum mundial</h1>
+          <p>${c.owned} / ${c.total} stickers registrados. Coca-Cola 12/12 se muestra solo como dato informativo.</p>
+          <div class="bar"><span style="width:${pct}%"></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat green"><i>🟢</i><strong>${c.owned}</strong><span>Tengo</span></div>
+      <div class="stat red"><i>🔴</i><strong>${c.missing}</strong><span>Faltan</span></div>
+      <div class="stat blue"><i>🔵</i><strong>${c.duplicates}</strong><span>Duplicados</span></div>
+      <div class="stat yellow"><i>📦</i><strong>${c.packs}</strong><span>Sobres</span></div>
+    </div>
+    <div class="quick-grid">
+      <button class="quick-card" data-go="albumView"><b>🌎 Álbum</b><span>Ver países y progreso.</span></button>
+      <button class="quick-card" data-go="tradeView"><b>🤝 Trade</b><span>Faltantes y duplicados.</span></button>
+      <button class="quick-card" data-go="statsView"><b>📊 Estadísticas</b><span>Resumen de colección.</span></button>
+      <button class="quick-card" id="backupBtn"><b>💾 Respaldo</b><span>Exportar tu colección.</span></button>
+    </div>`;
+  $('#backupBtn').onclick=exportState;
+  $$('#homeView [data-go]').forEach(b=>b.onclick=()=>setView(b.dataset.go));
 }
 function renderAlbum(){
-  const q = ($('#searchInput')?.value || '').trim().toLowerCase();
-  const numberQuery = /^\d+$/.test(q) ? Number(q) : null;
-  const list = $('#teamList');
-  list.innerHTML = '';
-  appState.teams
-    .filter(team => {
-      if(!q) return true;
-      if(team.name.toLowerCase().includes(q)) return true;
-      if(numberQuery) return team.missing.includes(numberQuery) || team.duplicates.includes(numberQuery);
-      return false;
-    })
-    .forEach(team => {
-      const owned = uniqueOwned(team);
-      const pct = owned / 20 * 100;
-      const btn = document.createElement('button');
-      btn.className = 'team-card';
-      btn.type = 'button';
-      btn.innerHTML = `<div class="flag">${flagMarkup(team)}</div><main><h3>${team.name}</h3><div class="sub">${owned}/20 · faltan ${team.missing.length} · dup ${countDuplicates(team)}</div><div class="mini-bar"><span style="width:${pct}%"></span></div></main><div class="count-pill">${pct.toFixed(0)}%</div>`;
-      btn.addEventListener('click', () => showTeam(team.name));
-      list.appendChild(btn);
-    });
+  $('#albumView').innerHTML=`<div class="section-head"><h2>Países</h2><button class="clear-btn" id="clearSearch">Limpiar</button></div><input id="searchInput" class="search" placeholder="🔎 Buscar país o número"></div><div id="teamList"></div>`;
+  const input=$('#searchInput');
+  input.oninput=()=>drawTeams(input.value);
+  $('#clearSearch').onclick=()=>{input.value='';drawTeams('')};
+  drawTeams('');
 }
-function showTeam(name){
-  currentTeamName = name;
-  const team = appState.teams.find(t=>t.name===name);
-  if(!team) return;
-  const dupMap = duplicateMap(team);
-  const owned = uniqueOwned(team);
-  const grid = Array.from({length:20}, (_,i)=>i+1).map(n => {
-    const status = stickerStatus(team,n);
-    const extra = status === 'duplicate' && dupMap[n] > 1 ? ` <small>x${dupMap[n]}</small>` : '';
-    return `<button class="sticker ${status}" type="button" data-num="${n}">${n}${extra}</button>`;
-  }).join('');
-  $('#detailRoot').innerHTML = `
-    <article class="card detail-head">
-      <div class="detail-title"><div class="flag">${flagMarkup(team)}</div><div><p class="eyebrow">Detalle</p><h2 id="detailTitle">${team.name}</h2></div></div>
-      <div class="detail-metrics">
-        <div class="mini-card"><strong>${owned}</strong><span>Tengo</span></div>
-        <div class="mini-card"><strong>${team.missing.length}</strong><span>Faltan</span></div>
-        <div class="mini-card"><strong>${countDuplicates(team)}</strong><span>Duplicados</span></div>
-      </div>
-      <div class="legend"><span>🟢 Tengo</span><span>🔴 Falta</span><span>🔵 Duplicado</span></div>
-      <div class="sticker-grid">${grid}</div>
-    </article>
-    <article class="list-block"><h3>Faltantes</h3><div class="chips">${chips(team.missing,'red')}</div></article>
-    <article class="list-block"><h3>Duplicados</h3><div class="chips">${duplicateChips(team)}</div></article>
-  `;
-  $$('.sticker', $('#detailRoot')).forEach(btn => btn.addEventListener('click', () => cycleSticker(team.name, Number(btn.dataset.num))));
-  setView('detail');
+function drawTeams(q){
+  q=(q||'').trim().toLowerCase();
+  const list=$('#teamList'); list.innerHTML='';
+  state.teams.filter(t=>!q||t.name.toLowerCase().includes(q)).forEach(t=>{
+    const c=teamCounts(t), cls=c.pct<50?'low':c.pct<90?'mid':'';
+    const card=document.createElement('button'); card.className='team-card';
+    card.innerHTML=`${flagImg(t)}<div class="team-main"><h3>${t.name}</h3><p>${c.owned}/${t.total} · faltan ${c.missing} · dup ${c.duplicates}</p><div class="team-bar"><span style="width:${c.pct}%"></span></div></div><div class="pct-pill ${cls}">${Math.round(c.pct)}%</div>`;
+    card.onclick=()=>openTeam(t.name);
+    list.appendChild(card);
+  });
 }
-function chips(nums, color){ return nums.length ? nums.map(n=>`<span class="chip ${color}">${n}</span>`).join('') : '<span class="muted">Ninguno</span>'; }
-function duplicateChips(team){
-  const map = duplicateMap(team);
-  const nums = Object.keys(map).map(Number).sort((a,b)=>a-b);
-  return nums.length ? nums.map(n=>`<span class="chip blue">${n}${map[n]>1 ? ` x${map[n]}` : ''}</span>`).join('') : '<span class="muted">Ninguno</span>';
+function openTeam(name){currentTeam=name; renderDetail(); setView('detailView');}
+function status(t,n){ if(t.missing.includes(n))return 'missing'; if(t.duplicates.includes(n))return 'duplicate'; return 'owned'; }
+function statusLabel(s){return s==='missing'?'Falta':s==='duplicate'?'Duplicado':'Tengo'}
+function cycleSticker(t,n){
+  if(!unlocked){ showToast('Activa el candado para editar'); return; }
+  resetLockTimer();
+  let s=status(t,n);
+  t.missing=t.missing.filter(x=>x!==n); t.duplicates=t.duplicates.filter(x=>x!==n);
+  if(s==='owned') t.missing.push(n);
+  else if(s==='missing') t.duplicates.push(n);
+  t.missing.sort((a,b)=>a-b); t.duplicates.sort((a,b)=>a-b);
+  save(); renderAll(); renderDetail(); showToast(`Sticker ${n}: ${statusLabel(status(t,n))}`);
 }
+function renderDetail(filter='all'){
+  const t=state.teams.find(x=>x.name===currentTeam)||state.teams[0]; currentTeam=t.name;
+  const c=teamCounts(t);
+  const btns=['all','owned','missing','duplicate'].map(f=>`<button class="${filter===f?'active':''}" data-filter="${f}">${f==='all'?'Todos':f==='owned'?'Tengo':f==='missing'?'Faltan':'Duplicados'}</button>`).join('');
+  const stickers=Array.from({length:t.total},(_,i)=>i+1).filter(n=>filter==='all'||status(t,n)===filter).map(n=>`<button class="sticker ${status(t,n)}" data-n="${n}">${n}</button>`).join('') || `<p class="empty">No hay stickers en este filtro.</p>`;
+  $('#detailView').innerHTML=`
+    <button class="back-btn" id="backAlbum">← Volver al álbum</button>
+    <div class="detail-hero panel">
+      <div class="detail-top">${flagImg(t)}<div><h2>${t.name}</h2><p class="muted">${c.owned}/${t.total} stickers · ${Math.round(c.pct)}%</p></div></div>
+      <div class="bar"><span style="width:${c.pct}%"></span></div>
+      <div class="detail-stats"><div class="detail-stat green"><strong>${c.owned}</strong><br><span>Tengo</span></div><div class="detail-stat red"><strong>${c.missing}</strong><br><span>Faltan</span></div><div class="detail-stat blue"><strong>${c.duplicates}</strong><br><span>Duplicados</span></div></div>
+      <div class="filters">${btns}</div>
+      <div class="sticker-grid">${stickers}</div>
+    </div>
+    <div class="list-panel panel"><h3>Faltantes</h3>${chips(t.missing,'red')}</div>
+    <div class="list-panel panel" style="margin-top:12px"><h3>Duplicados</h3>${chips(t.duplicates,'blue')}</div>`;
+  $('#backAlbum').onclick=()=>setView('albumView');
+  $$('#detailView [data-filter]').forEach(b=>b.onclick=()=>renderDetail(b.dataset.filter));
+  $$('#detailView .sticker').forEach(b=>b.onclick=()=>cycleSticker(t,Number(b.dataset.n)));
+}
+function chips(arr,color){return arr.length?`<div class="chips">${arr.map(n=>`<span class="chip ${color}">${n}</span>`).join('')}</div>`:`<p class="empty">Ninguno</p>`}
 function renderTrade(){
-  const root = $('#tradeList');
-  const isMissing = currentTradeMode === 'missing';
-  root.innerHTML = appState.teams.map(team => {
-    const content = isMissing ? chips(team.missing, 'red') : duplicateChips(team);
-    const count = isMissing ? team.missing.length : countDuplicates(team);
-    if(count === 0) return '';
-    return `<article class="trade-item"><h3><span class="inline-flag">${flagMarkup(team)}</span>${team.name}</h3><div class="chips">${content}</div></article>`;
-  }).join('');
+  $('#tradeView').innerHTML=`<div class="section-head"><h2>Trade</h2></div>${state.teams.map(t=>{
+    if(!t.missing.length&&!t.duplicates.length)return '';
+    return `<div class="team-card" style="display:block"> <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">${flagImg(t)}<h3 style="margin:0;font-size:24px">${t.name}</h3></div><p class="muted">Me faltan</p>${chips(t.missing,'red')}<p class="muted" style="margin-top:12px">Tengo duplicados</p>${chips(t.duplicates,'blue')}</div>`
+  }).join('')}`;
 }
 function renderStats(){
-  const t = totals();
-  const byMissing = [...appState.teams].sort((a,b)=>b.missing.length-a.missing.length)[0];
-  const byComplete = [...appState.teams].sort((a,b)=>a.missing.length-b.missing.length)[0];
-  const byDup = [...appState.teams].sort((a,b)=>countDuplicates(b)-countDuplicates(a))[0];
-  $('#statsRoot').innerHTML = `
-    <div class="stat-row"><span>Progreso</span><b>${t.owned}/${t.total}</b></div>
-    <div class="stat-row"><span>Porcentaje</span><b>${t.percent.toFixed(1)}%</b></div>
-    <div class="stat-row"><span>Más completo</span><b><span class="inline-flag">${flagMarkup(byComplete)}</span> ${byComplete.name}</b></div>
-    <div class="stat-row"><span>Más faltantes</span><b><span class="inline-flag">${flagMarkup(byMissing)}</span> ${byMissing.name} (${byMissing.missing.length})</b></div>
-    <div class="stat-row"><span>Más duplicados</span><b><span class="inline-flag">${flagMarkup(byDup)}</span> ${byDup.name} (${countDuplicates(byDup)})</b></div>
-    <div class="stat-row"><span>Coca-Cola</span><b>${appState.meta.cocaCola.owned}/${appState.meta.cocaCola.total}</b></div>
-  `;
+  const c=counts();
+  const best=[...state.teams].sort((a,b)=>teamCounts(b).pct-teamCounts(a).pct)[0];
+  const worst=[...state.teams].sort((a,b)=>teamCounts(a).pct-teamCounts(b).pct)[0];
+  const mostDup=[...state.teams].sort((a,b)=>b.duplicates.length-a.duplicates.length)[0];
+  $('#statsView').innerHTML=`<div class="section-head"><h2>Stats</h2></div>
+    <div class="stat-grid"><div class="stat green"><strong>${c.owned}</strong><span>Tengo</span></div><div class="stat red"><strong>${c.missing}</strong><span>Faltan</span></div><div class="stat blue"><strong>${c.duplicates}</strong><span>Dup</span></div><div class="stat yellow"><strong>12/12</strong><span>Coca-Cola</span></div></div>
+    <div class="team-card">${flagImg(best)}<div class="team-main"><h3>Más completo</h3><p>${best.name} · ${teamCounts(best).owned}/${best.total}</p></div></div>
+    <div class="team-card">${flagImg(worst)}<div class="team-main"><h3>Más faltantes</h3><p>${worst.name} · faltan ${worst.missing.length}</p></div></div>
+    <div class="team-card">${flagImg(mostDup)}<div class="team-main"><h3>Más duplicados</h3><p>${mostDup.name} · dup ${mostDup.duplicates.length}</p></div></div>
+    <div class="quick-grid" style="margin-top:12px"><button class="quick-card" id="exportBtn"><b>Exportar</b><span>Guardar respaldo JSON.</span></button><button class="quick-card" id="resetBtn"><b>Restaurar</b><span>Volver a lista inicial.</span></button></div>`;
+  $('#exportBtn').onclick=exportState;
+  $('#resetBtn').onclick=()=>{if(confirm('¿Restaurar lista inicial?')){state=clone(window.ROAD980_DATA);save();renderAll();setView('homeView')}};
 }
-function renderAll(){ renderHome(); renderAlbum(); renderTrade(); renderStats(); }
-
-$$('.nav-btn').forEach(btn => btn.addEventListener('click', () => setView(btn.dataset.view)));
-$$('[data-goto]').forEach(btn => btn.addEventListener('click', () => setView(btn.dataset.goto)));
-$('#backToAlbum').addEventListener('click', () => setView('album'));
-$('#searchInput').addEventListener('input', renderAlbum);
-$('#clearSearch').addEventListener('click', () => { $('#searchInput').value = ''; renderAlbum(); });
-$$('.segment').forEach(btn => btn.addEventListener('click', () => { currentTradeMode = btn.dataset.trade; $$('.segment').forEach(b=>b.classList.toggle('active', b===btn)); renderTrade(); }));
-let ownerAutoLockTimer = null;
-function expectedOwnerPin(){ return [48,51,49,50].map(c => String.fromCharCode(c)).join(''); }
-function lockOwner(showMessage=true){
-  unlocked = false;
-  $('#ownerToggle').textContent = '🔒 Solo lectura';
-  $('#pinInput').value = '';
-  clearTimeout(ownerAutoLockTimer);
-  if(showMessage) toast('Modo solo lectura');
+function exportState(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));a.download='road-to-980-respaldo.json';a.click();}
+function renderAll(){renderHome();renderAlbum();renderTrade();renderStats();updateOwnerBtn();}
+function bind(){
+  $$('.bottom-nav button').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+  $('#ownerBtn').onclick=()=>{ if(unlocked){unlocked=false;updateOwnerBtn();showToast('Modo lectura');return;} $('#pinInput').value=''; $('#pinModal').classList.remove('hidden'); setTimeout(()=>$('#pinInput').focus(),50); };
+  $('#cancelPin').onclick=()=>{$('#pinInput').value='';$('#pinModal').classList.add('hidden')};
+  $('#unlockPin').onclick=()=>{const v=$('#pinInput').value; if(verifyPin(v)){unlocked=true;$('#pinInput').value='';$('#pinModal').classList.add('hidden');updateOwnerBtn();resetLockTimer();showToast('Modo propietario activo');}else{showToast('PIN incorrecto');$('#pinInput').value='';}};
+  $('#pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('#unlockPin').click()});
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=3.1').catch(()=>{});
 }
-function refreshOwnerTimer(){
-  if(!unlocked) return;
-  clearTimeout(ownerAutoLockTimer);
-  ownerAutoLockTimer = setTimeout(() => lockOwner(true), 5 * 60 * 1000);
-}
-function openOwnerDialog(){
-  const input = $('#pinInput');
-  input.value = '';
-  input.setAttribute('value','');
-  $('#pinDialog').showModal();
-  setTimeout(()=>{ input.value = ''; input.focus(); }, 120);
-}
-$('#ownerToggle').addEventListener('click', () => {
-  if(unlocked){ lockOwner(true); return; }
-  openOwnerDialog();
-});
-$('#pinDialog').addEventListener('close', () => { $('#pinInput').value = ''; });
-$('#pinInput').addEventListener('input', () => { $('#pinInput').value = $('#pinInput').value.replace(/\D/g,'').slice(0,4); });
-$('#unlockBtn').addEventListener('click', () => {
-  const input = $('#pinInput');
-  if(input.value === expectedOwnerPin()){
-    unlocked = true;
-    $('#ownerToggle').textContent = '🔓 Editando';
-    input.value = '';
-    $('#pinDialog').close();
-    toast('Modo dueño activado');
-    refreshOwnerTimer();
-  } else {
-    input.value = '';
-    toast('PIN incorrecto');
-  }
-});
-['click','touchstart','keydown'].forEach(evt => document.addEventListener(evt, refreshOwnerTimer, {passive:true}));
-$('#exportBtn').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(appState,null,2)], {type:'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'road-to-980-respaldo.json'; a.click(); URL.revokeObjectURL(a.href);
-});
-$('#importFile').addEventListener('change', event => {
-  const file = event.target.files?.[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = () => { try { appState = JSON.parse(reader.result); saveState(); renderAll(); toast('Respaldo importado'); } catch(e){ toast('Archivo inválido'); } };
-  reader.readAsText(file);
-});
-$('#resetBtn').addEventListener('click', () => {
-  if(!unlocked){ toast('Desbloquea con PIN primero'); return; }
-  if(confirm('¿Restaurar la lista inicial?')){ appState = cloneInitial(); saveState(); renderAll(); toast('Lista restaurada'); }
-});
-if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('sw.js?v=2.5').catch(()=>{})); }
-renderAll();
+renderAll(); bind();
